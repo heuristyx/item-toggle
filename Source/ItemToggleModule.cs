@@ -4,6 +4,8 @@ using MonoMod.RuntimeDetour;
 using System.Reflection;
 using Celeste.Mod.Celeste_Multiworld.UI;
 using Celeste.Mod.ItemToggle.UI;
+using Archipelago.MultiClient.Net;
+using IL.Monocle;
 
 namespace Celeste.Mod.ItemToggle;
 
@@ -23,6 +25,8 @@ public class ItemToggleModule : EverestModule
     private ToggleUIManager ToggleUIManagerInst;
 
     private static Hook DeathLinkGetterDetour = new Hook(typeof(ArchipelagoManager).GetMethod("get_DeathLink",BindingFlags.Instance | BindingFlags.Public), DeathLinkPatch);
+
+    private static Hook SendPacketDetour = new Hook(typeof(ArchipelagoManager).GetMethod("SendPacket",BindingFlags.Instance | BindingFlags.NonPublic), SendPacketPatch);
 
     public ItemToggleModule()
     {
@@ -45,12 +49,18 @@ public class ItemToggleModule : EverestModule
         On.Celeste.MainMenuClimb.Render -= connectUIDelegate;
         On.Celeste.MainMenuClimb.Confirm += MainMenuClimb_Confirm;
 
+        // Prevent showing locations in the journal; not needed anyway
+        Type modJournalType = typeof(Celeste_MultiworldModule).Assembly.GetType("Celeste.Mod.Celeste_Multiworld.UI.modJournal");
+        var apJournalDelegate = (On.Celeste.OuiJournalProgress.hook_ctor) modJournalType.GetMethod("modOuiJournalProgress_ctor",BindingFlags.Static | BindingFlags.NonPublic).CreateDelegate(typeof(On.Celeste.OuiJournalProgress.hook_ctor));
+        On.Celeste.OuiJournalProgress.ctor -= apJournalDelegate;
+
         // AP configuration
         ArchipelagoManager.Instance.ActiveLevels = new([
             "0a","1a","1b","1c","2a","2b","2c","3a","3b","3c","4a","4b","4c","5a","5b","5c",
             "6a","6b","6c","7a","7b","7c","8a","9a","9b","9c","10a","10b","10c"
         ]);
         ArchipelagoManager.Instance.CrouchShuffle = true;
+        ArchipelagoManager.Instance.GoalLevel = "10c";
     }
 
     public override void Unload()
@@ -61,12 +71,23 @@ public class ItemToggleModule : EverestModule
 
     private static void MainMenuClimb_Confirm(On.Celeste.MainMenuClimb.orig_Confirm orig, MainMenuClimb self)
     { 
-        OuiConnection.Instance.BeginGame();
+        if (Instance.ToggleUIManagerInst == null)
+        {
+            // Populate AP save data upon first time starting game
+            OuiConnection.Instance.BeginGame();
 
-        // Create the manager now that AP has populated its save data
-        Instance.ToggleUIManagerInst = Instance.ToggleUIManagerInst ?? new ToggleUIManager(Celeste.Instance);
+            Instance.ToggleUIManagerInst = new ToggleUIManager(Celeste.Instance);
+            Celeste_MultiworldModule.SaveData.GoalItem = true;
+        }
+        else
+        {
+            (self.Scene as Overworld).Goto<OuiChapterSelect>();
+        }
     }
 
     // Disable deathlink (roundabout due to it being read-only)
     private static bool DeathLinkPatch(Func<ArchipelagoManager,bool> orig, ArchipelagoManager self) => false;
+
+    // Prevent AP from sending any packets
+    private static void SendPacketPatch(Action<ArchipelagoManager,ArchipelagoPacketBase> orig, ArchipelagoManager self, ArchipelagoPacketBase packet) {}
 }

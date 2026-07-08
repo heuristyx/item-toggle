@@ -31,6 +31,8 @@ namespace Celeste.Mod.ItemToggle.UI
 
         private readonly Dictionary<long,string> APKeyAPToID = new Dictionary<long, string>();
 
+        private static int Count = 0;
+
         public ToggleUIManager(Game game) : base(game)
         {
             game.Components.Add(this);
@@ -48,6 +50,9 @@ namespace Celeste.Mod.ItemToggle.UI
                 if (apItemIDToString[e.Key].Contains(" - ")) name = apItemIDToString[e.Key].Split(" - ")[1];
                 return new ToggleableItem(e.Key,name,Celeste_MultiworldModule.SaveData.KeyItems);
             }).ToList();
+
+            Count++;
+            Logger.Info("it",Count.ToString());
         }
 
         private enum MenuContext
@@ -59,6 +64,11 @@ namespace Celeste.Mod.ItemToggle.UI
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
+            if (!Enabled) {
+                Visible = false;
+                return;
+            }
+
             bool disabled = MInput.Disabled;
             MInput.Disabled = false;
             // UI Controls
