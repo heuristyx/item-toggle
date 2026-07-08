@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,12 +10,13 @@ namespace Celeste.Mod.ItemToggle.UI
 {
     public class ToggleUIManager : DrawableGameComponent
     {
-        private int OffsetX = 300;
-        private int OffsetY = 200;
-        private int Padding = 10;
-        private int TitleHeight = 100;
+        private float OffsetX = Celeste.ViewWidth / 16f;
+        private float OffsetY = Celeste.ViewHeight / 16f;
+        private int Padding = 8;
+        private int TitleHeight = 96;
         private int ItemMargin = 72;
         private int KeyMenuWidth = 400;
+        private float RenderScale = 1f;
 
         private int NumRows, NumCols = 0;
         public (int r, int c) SelectedItem = (0, 0);
@@ -126,6 +126,12 @@ namespace Celeste.Mod.ItemToggle.UI
                 Visible = !Visible;
                 disabled = Visible;
                 Input.MenuCancel.ConsumePress();
+
+                // Resize UI
+                OffsetX = Celeste.ViewWidth / 16;
+                OffsetY = Celeste.ViewHeight / 16;
+                if (Celeste.ViewWidth <= 1280) RenderScale = 0.5f;
+                else RenderScale = 1f;
             }
             
             MInput.Disabled = disabled;
@@ -135,17 +141,17 @@ namespace Celeste.Mod.ItemToggle.UI
         {
             if (!Visible) return;
 
-            int width = Math.Max(500, 2 * Padding + ItemMargin * NumCols);
-            int height = Math.Max(300, 3 * Padding + ItemMargin * NumRows + TitleHeight);
+            float width   = 2 * Padding + ItemMargin * NumCols;
+            float height  = 3 * Padding + ItemMargin * NumRows + TitleHeight;
 
             base.Draw(gameTime);
             Monocle.Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
             // Background
-            Monocle.Draw.Rect(OffsetX, OffsetY, width, height, new Color(0.1f, 0.1f, 0.1f, 0.75f));
+            DrawScaledRect(OffsetX, OffsetY, width, height, new Color(0.1f, 0.1f, 0.1f, 0.75f), RenderScale);
 
             // Title
-            Monocle.Draw.Rect(OffsetX + Padding, OffsetY + Padding, width - 2 * Padding, TitleHeight, new Color(0.1f, 0.1f, 0.1f, 0.5f));
-            ActiveFont.Draw("Item Toggle Menu", new Vector2(OffsetX + width / 2, OffsetY + Padding + TitleHeight / 2), new Vector2(0.5f), new Vector2(1f), Color.White);
+            DrawScaledRect(OffsetX + Padding, OffsetY + Padding, width - 2 * Padding, TitleHeight, new Color(0.1f, 0.1f, 0.1f, 0.5f), RenderScale);
+            ActiveFont.Draw("Item Toggle Menu", RenderScale*new Vector2(OffsetX + width / 2, OffsetY + Padding + TitleHeight / 2), new Vector2(0.5f), new Vector2(RenderScale), Color.White);
             Monocle.Draw.SpriteBatch.End();
 
             // Grid
@@ -157,27 +163,27 @@ namespace Celeste.Mod.ItemToggle.UI
                     ToggleableItem item = ToggleUIItemData.ItemGrid[r, c];
                     if (item == null) continue;
 
-                    int X = OffsetX + Padding + c * ItemMargin;
-                    int Y = OffsetY + 2 * Padding + r * ItemMargin + TitleHeight;
+                    float X = OffsetX + Padding + c * ItemMargin;
+                    float Y = OffsetY + 2 * Padding + r * ItemMargin + TitleHeight;
 
                     // Selection highlight
                     if (SelectedItem.Equals((r, c)))
                     {
-                        Monocle.Draw.Rect(X  , Y  , ItemMargin  , ItemMargin  , SelectBorderColor);
-                        Monocle.Draw.Rect(X+2, Y+2, ItemMargin-4, ItemMargin-4, SelectBodyColor);
+                        DrawScaledRect(X  , Y  , ItemMargin  , ItemMargin  , SelectBorderColor, RenderScale);
+                        DrawScaledRect(X+2, Y+2, ItemMargin-4, ItemMargin-4, SelectBodyColor, RenderScale);
                     }
                     // Active highlight
                     if (item.GetActive())
                     {
                         if (!(item.ItemID > 0xCA10080 && item.ItemID < 0xCA1008A))// Dash direction
                         {
-                            Monocle.Draw.Rect(X+2, Y+2, ItemMargin-4, ItemMargin-4, ActiveColor);
+                            DrawScaledRect(X+2, Y+2, ItemMargin-4, ItemMargin-4, ActiveColor, RenderScale);
                         }
                     }
                     // Red highlight on key if there are no keys in the current level
                     if (item.Name == "key" && GetKeysInArea().Count == 0)
                     {
-                        Monocle.Draw.Rect(X+2, Y+2, ItemMargin-4, ItemMargin-4, Color.DarkRed);
+                        DrawScaledRect(X+2, Y+2, ItemMargin-4, ItemMargin-4, Color.DarkRed, RenderScale);
                     }
 
                     X += ItemMargin / 2;
@@ -188,7 +194,7 @@ namespace Celeste.Mod.ItemToggle.UI
                     {
                         color = Color.Magenta;
                     }
-                    tex.DrawCentered(new Vector2(X, Y), color, 2f);
+                    tex.DrawCentered(new Vector2(RenderScale*X, RenderScale*Y+0.01f), color, 2f*RenderScale); // Small shift to vertical texcoord for 1:1 pixel rendering
                 }
             }
             Monocle.Draw.SpriteBatch.End();
@@ -199,10 +205,11 @@ namespace Celeste.Mod.ItemToggle.UI
             {
                 var keys = GetKeysInArea();
 
-                int topLeftX = OffsetX+width-KeyMenuWidth;
-                int topLeftY = OffsetY+height+Padding;
-                float keyMenuHeight = keys.Count * (FontSize/2+16) + 2*Padding;
-                Monocle.Draw.Rect(topLeftX, topLeftY, KeyMenuWidth, keyMenuHeight, new Color(0.1f, 0.1f, 0.1f, 0.75f));
+                float fontSizeMod = 0.5f;
+                float topLeftX = OffsetX+width-KeyMenuWidth;
+                float topLeftY = OffsetY+height+Padding;
+                float keyMenuHeight = keys.Count * (fontSizeMod*FontSize+16) + 2*Padding;
+                DrawScaledRect(topLeftX, topLeftY, KeyMenuWidth, keyMenuHeight, new Color(0.1f, 0.1f, 0.1f, 0.75f), RenderScale);
 
                 topLeftX += Padding;
                 topLeftY += Padding;
@@ -213,19 +220,19 @@ namespace Celeste.Mod.ItemToggle.UI
                     // Selection highlight
                     if (SelectedKey == i)
                     {
-                        Monocle.Draw.Rect(topLeftX  , topLeftY+Y  , KeyMenuWidth-2*Padding  , FontSize/2+8, SelectBorderColor);
-                        Monocle.Draw.Rect(topLeftX+2, topLeftY+Y+2, KeyMenuWidth-2*Padding-4, FontSize/2+4, SelectBodyColor);
+                        DrawScaledRect(topLeftX  , topLeftY+Y  , KeyMenuWidth-2*Padding  , FontSize*fontSizeMod+8, SelectBorderColor, RenderScale);
+                        DrawScaledRect(topLeftX+2, topLeftY+Y+2, KeyMenuWidth-2*Padding-4, FontSize*fontSizeMod+4, SelectBodyColor  , RenderScale);
                     }
 
                     // Active highlight
                     if (keys[i].GetActive())
                     {
-                       Monocle.Draw.Rect(topLeftX+2, topLeftY+Y+2, KeyMenuWidth-2*Padding-4, FontSize/2+4, ActiveColor);
+                       DrawScaledRect(topLeftX+2, topLeftY+Y+2, KeyMenuWidth-2*Padding-4, FontSize*fontSizeMod+4, ActiveColor, RenderScale);
                     }
 
-                    ActiveFont.Draw(keys[i].Name, new Vector2(topLeftX+Padding,topLeftY+Y+4), new Vector2(0f), new Vector2(0.5f), Color.White);
+                    ActiveFont.Draw(keys[i].Name, RenderScale*new Vector2(topLeftX+Padding,topLeftY+Y+4), new Vector2(0f), new Vector2(fontSizeMod*RenderScale), Color.White);
 
-                    Y += FontSize/2+16;
+                    Y += FontSize*fontSizeMod+16;
                 }
             }
             Monocle.Draw.SpriteBatch.End();
@@ -245,6 +252,11 @@ namespace Celeste.Mod.ItemToggle.UI
             if (SaveData.Instance.CurrentSession_Safe == null) return new List<ToggleableItem>();
             string currentMapID = $"{SaveData.Instance.CurrentSession_Safe.Area.ID}_{(int)SaveData.Instance.CurrentSession_Safe.Area.Mode}";
             return ToggleUIItemData.KeyList.Where(k => APKeyAPToID[k.ItemID].StartsWith(currentMapID)).ToList();
+        }
+
+        private static void DrawScaledRect(float x, float y, float width, float height, Color color, float scale)
+        {
+            Monocle.Draw.Rect(scale*x,scale*y,scale*width,scale*height,color);
         }
     }
 }
