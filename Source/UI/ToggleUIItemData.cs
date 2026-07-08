@@ -35,7 +35,7 @@ namespace Celeste.Mod.ItemToggle.UI
         public static readonly ToggleableItem Badeline   = new ToggleableItem(0xCA12011, "badeline", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
         public static readonly ToggleableItem IceBall    = new ToggleableItem(0xCA12012, "iceball", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
         public static readonly ToggleableItem CoreToggle = new ToggleableItem(0xCA12013, "coreswitch", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
-        public static readonly ToggleableItem CoreBlock  = new ToggleableItem(0xCA12013, "coreblock", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
+        public static readonly ToggleableItem CoreBlock  = new ToggleableItem(0xCA12014, "coreblock", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
         public static readonly ToggleableItem DblRefill  = new ToggleableItem(0xCA12019, "doublerefill", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
         public static readonly ToggleableItem Pufferfish = new ToggleableItem(0xCA12015, "puffer", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
         public static readonly ToggleableItem Jellyfish  = new ToggleableItem(0xCA12016, "glider", Celeste_Multiworld.Celeste_MultiworldModule.SaveData.Interactables);
