@@ -100,7 +100,7 @@ namespace Celeste.Mod.ItemToggle.UI
                             if (ItemToggleModule.Settings.LockItem.Pressed)
                             {
                                 var item = ToggleUIItemData.ItemGrid[SelectedItem.r, SelectedItem.c];
-                                if (item != null) item.IsLocked = !item.IsLocked;
+                                if (item != null && item.ItemID < 0xFF10000) item.IsLocked = !item.IsLocked;
                             }
                         }
                         break;
