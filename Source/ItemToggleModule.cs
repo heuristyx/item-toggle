@@ -21,8 +21,6 @@ public class ItemToggleModule : EverestModule
     public override Type SaveDataType => typeof(ItemToggleModuleSaveData);
     public static ItemToggleModuleSaveData SaveData => (ItemToggleModuleSaveData)Instance._SaveData;
 
-    private ToggleUIManager ToggleUIManagerInst;
-
     private static Hook DeathLinkGetterDetour = new Hook(typeof(ArchipelagoManager).GetMethod("get_DeathLink",BindingFlags.Instance | BindingFlags.Public), DeathLinkPatch);
 
     private static Hook SendPacketDetour = new Hook(typeof(ArchipelagoManager).GetMethod("SendPacket",BindingFlags.Instance | BindingFlags.NonPublic), SendPacketPatch);
@@ -70,12 +68,12 @@ public class ItemToggleModule : EverestModule
 
     private static void MainMenuClimb_Confirm(On.Celeste.MainMenuClimb.orig_Confirm orig, MainMenuClimb self)
     { 
-        if (Instance.ToggleUIManagerInst == null)
+        if (ToggleUIManager.Instance == null) 
         {
             // Populate AP save data upon first time starting game
             OuiConnection.Instance.BeginGame();
 
-            Instance.ToggleUIManagerInst = new ToggleUIManager(Celeste.Instance);
+            new ToggleUIManager(Celeste.Instance);
             Celeste_MultiworldModule.SaveData.GoalItem = true;
         }
         else

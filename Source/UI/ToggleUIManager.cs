@@ -10,12 +10,19 @@ namespace Celeste.Mod.ItemToggle.UI
 {
     public class ToggleUIManager : DrawableGameComponent
     {
+        public static ToggleUIManager Instance { get; private set; }
+
+        private readonly int Padding = 8;
+        private readonly int TitleHeight = 96;
+        private readonly int ItemMargin = 72;
+        private readonly int KeyMenuWidth = 400;
+        private readonly Color ActiveColor = Calc.HexToColor("30B335");
+        private readonly Color SelectBorderColor = Calc.HexToColor("FF8000");
+        private readonly Color SelectBodyColor = Calc.HexToColor("45283C");
+        private readonly float FontSize = ActiveFont.BaseSize; // 64px
+
         private float OffsetX = Celeste.ViewWidth / 16f;
         private float OffsetY = Celeste.ViewHeight / 16f;
-        private int Padding = 8;
-        private int TitleHeight = 96;
-        private int ItemMargin = 72;
-        private int KeyMenuWidth = 400;
         private float RenderScale = 1f;
 
         private int NumRows, NumCols = 0;
@@ -24,32 +31,21 @@ namespace Celeste.Mod.ItemToggle.UI
 
         private MenuContext Context;
 
-        private readonly Color ActiveColor = Calc.HexToColor("30B335");
-        private readonly Color SelectBorderColor = Calc.HexToColor("FF8000");
-        private readonly Color SelectBodyColor = Calc.HexToColor("45283C");
-        private readonly float FontSize = ActiveFont.BaseSize; // 64px
-
-        private readonly Dictionary<long,string> APKeyAPToID = new Dictionary<long, string>();
-
-        private static int Count = 0;
+        private Dictionary<long,string> APKeyAPToID = new Dictionary<long, string>();
+        public List<ToggleableItem> KeyList { get; set; } = new List<ToggleableItem>();
 
         public ToggleUIManager(Game game) : base(game)
         {
             game.Components.Add(this);
             Visible = false;
 
+            Instance = this;
+
             NumRows = ToggleUIItemData.ItemGrid.GetLength(0);
             NumCols = ToggleUIItemData.ItemGrid.GetLength(1);
 
-            var apItemIDToString = (Dictionary<long,string>) typeof(Celeste_MultiworldModule).Assembly.GetType("Celeste.Mod.Celeste_Multiworld.Items.APItemData").GetProperty("ItemIDToString",BindingFlags.Static | BindingFlags.Public).GetValue(null);
-            APKeyAPToID = (Dictionary<long,string>) typeof(Celeste_MultiworldModule).Assembly.GetType("Celeste.Mod.Celeste_Multiworld.Locations.APLocationData").GetProperty("KeyAPToID",BindingFlags.Static | BindingFlags.Public).GetValue(null);
-
-            ToggleUIItemData.KeyMenu.SetActive = (_) => OpenKeyMenu();
-            ToggleUIItemData.KeyList = APKeyAPToID.Select(e => {
-                string name = apItemIDToString[e.Key];
-                if (apItemIDToString[e.Key].Contains(" - ")) name = apItemIDToString[e.Key].Split(" - ")[1];
-                return new ToggleableItem(e.Key,name,Celeste_MultiworldModule.SaveData.KeyItems);
-            }).ToList();
+            LinkItemData();
+            LinkKeyData();
         }
 
         private enum MenuContext
@@ -255,9 +251,110 @@ namespace Celeste.Mod.ItemToggle.UI
             Monocle.Draw.SpriteBatch.End();
         }
 
+        private static void DrawScaledRect(float x, float y, float width, float height, Color color, float scale)
+        {
+            Monocle.Draw.Rect(scale*x,scale*y,scale*width,scale*height,color);
+        }
+
+        private void LinkItemData()
+        {
+            foreach (ToggleableItem item in ToggleUIItemData.ItemGrid)
+            {
+                if (item == null) continue;
+                switch (item.ItemID)
+                {
+                    case 0xFF10000: // AllOn
+                        item.GetActive = () => false;
+                        item.SetActive = (_) => ToggleAll(true);
+                        break;
+                    case 0xFF10001: // AllOff
+                        item.GetActive = () => false;
+                        item.SetActive = (_) => ToggleAll(false);
+                        break;
+                    case 0xFF10002: // Key
+                        item.GetActive = () => false;
+                        item.SetActive = (_) => OpenKeyMenu();
+                        break;
+                    case 0xCA10081: // U Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.UpDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.UpDash = newValue; };
+                        break;
+                    case 0xCA10082: // UR Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.UpRightDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.UpRightDash = newValue; };
+                        break;
+                    case 0xCA10083: // R Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.RightDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.RightDash = newValue; };
+                        break;
+                    case 0xCA10084: // DR Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.DownRightDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.DownRightDash = newValue; };
+                        break;
+                    case 0xCA10085: // D Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.DownDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.DownDash = newValue; };
+                        break;
+                    case 0xCA10086: // DL Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.DownLeftDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.DownLeftDash = newValue; };
+                        break;
+                    case 0xCA10087: // L Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.LeftDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.LeftDash = newValue; };
+                        break;
+                    case 0xCA10088: // UL Dash
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.UpLeftDash;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.UpLeftDash = newValue; };
+                        break;
+                    case 0xCA1008A: // Left Climb
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.LeftClimb;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.LeftClimb = newValue; };
+                        break;
+                    case 0xCA1008B: // Right Climb
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.RightClimb;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.RightClimb = newValue; };
+                        break;
+                    case 0xCA1008C: // Crouch
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.Crouch;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.Crouch = newValue; };
+                        break;
+                    default: // Interactables
+                        item.GetActive = () => Celeste_MultiworldModule.SaveData.Interactables.TryGetValue(item.ItemID, out bool isActive) ? isActive : false;
+                        item.SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.Interactables[item.ItemID] = newValue; };
+                        break;
+                }
+            }
+        }
+
+        private void LinkKeyData()
+        {
+            var apItemIDToString = (Dictionary<long,string>) typeof(Celeste_MultiworldModule).Assembly.GetType("Celeste.Mod.Celeste_Multiworld.Items.APItemData").GetProperty("ItemIDToString",BindingFlags.Static | BindingFlags.Public).GetValue(null);
+            APKeyAPToID = (Dictionary<long,string>) typeof(Celeste_MultiworldModule).Assembly.GetType("Celeste.Mod.Celeste_Multiworld.Locations.APLocationData").GetProperty("KeyAPToID",BindingFlags.Static | BindingFlags.Public).GetValue(null);
+
+            ToggleUIItemData.KeyMenu.SetActive = (_) => OpenKeyMenu();
+            KeyList = APKeyAPToID.Select(e => {
+                string name = apItemIDToString[e.Key];
+                if (apItemIDToString[e.Key].Contains(" - ")) name = apItemIDToString[e.Key].Split(" - ")[1];
+
+                return new ToggleableItem(e.Key,name) {
+                    GetActive = () => Celeste_MultiworldModule.SaveData.KeyItems.TryGetValue(e.Key, out bool isActive) ? isActive : false,
+                    SetActive = (newValue) => { Celeste_MultiworldModule.SaveData.KeyItems[e.Key] = newValue; }
+                };
+            }).ToList();
+        }
+
+        private static void ToggleAll(bool newValue)
+        {
+            foreach (ToggleableItem item in ToggleUIItemData.ItemGrid)
+            {
+                if (item == null || item.ItemID >= 0xFF10000 || item.IsLocked) continue;
+                item.SetActive(newValue);
+            }
+        }
+
         public void OpenKeyMenu()
         {
-            if (SaveData.Instance.CurrentSession_Safe == null) return;
             if (GetKeysInArea().Count == 0) return;
 
             Context = MenuContext.KeySelect;
@@ -268,12 +365,7 @@ namespace Celeste.Mod.ItemToggle.UI
         {
             if (SaveData.Instance.CurrentSession_Safe == null) return new List<ToggleableItem>();
             string currentMapID = $"{SaveData.Instance.CurrentSession_Safe.Area.ID}_{(int)SaveData.Instance.CurrentSession_Safe.Area.Mode}";
-            return ToggleUIItemData.KeyList.Where(k => APKeyAPToID[k.ItemID].StartsWith(currentMapID)).ToList();
-        }
-
-        private static void DrawScaledRect(float x, float y, float width, float height, Color color, float scale)
-        {
-            Monocle.Draw.Rect(scale*x,scale*y,scale*width,scale*height,color);
+            return KeyList.Where(k => APKeyAPToID[k.ItemID].StartsWith(currentMapID)).ToList();
         }
     }
 }
