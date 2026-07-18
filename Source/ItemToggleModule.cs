@@ -5,7 +5,6 @@ using System.Reflection;
 using Celeste.Mod.Celeste_Multiworld.UI;
 using Celeste.Mod.ItemToggle.UI;
 using Archipelago.MultiClient.Net;
-using IL.Monocle;
 
 namespace Celeste.Mod.ItemToggle;
 

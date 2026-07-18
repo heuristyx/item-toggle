@@ -50,9 +50,6 @@ namespace Celeste.Mod.ItemToggle.UI
                 if (apItemIDToString[e.Key].Contains(" - ")) name = apItemIDToString[e.Key].Split(" - ")[1];
                 return new ToggleableItem(e.Key,name,Celeste_MultiworldModule.SaveData.KeyItems);
             }).ToList();
-
-            Count++;
-            Logger.Info("it",Count.ToString());
         }
 
         private enum MenuContext
@@ -103,6 +100,11 @@ namespace Celeste.Mod.ItemToggle.UI
                             {
                                 var item = ToggleUIItemData.ItemGrid[SelectedItem.r, SelectedItem.c];
                                 item?.SetActive(!item.GetActive());
+                            }
+                            if (ItemToggleModule.Settings.LockItem.Pressed)
+                            {
+                                var item = ToggleUIItemData.ItemGrid[SelectedItem.r, SelectedItem.c];
+                                if (item != null) item.IsLocked = !item.IsLocked;
                             }
                         }
                         break;
@@ -185,7 +187,7 @@ namespace Celeste.Mod.ItemToggle.UI
                     // Active highlight
                     if (item.GetActive())
                     {
-                        if (!(item.ItemID > 0xCA10080 && item.ItemID < 0xCA1008A))// Dash direction
+                        if (!(item.ItemID > 0xCA10080 && item.ItemID < 0xCA1008A)) // Dash direction
                         {
                             DrawScaledRect(X+2, Y+2, ItemMargin-4, ItemMargin-4, ActiveColor, RenderScale);
                         }
@@ -205,6 +207,11 @@ namespace Celeste.Mod.ItemToggle.UI
                         color = Color.Magenta;
                     }
                     tex.DrawCentered(new Vector2(RenderScale*X, RenderScale*Y+0.01f), color, 2f*RenderScale); // Small shift to vertical texcoord for 1:1 pixel rendering
+
+                    if (item.IsLocked) { // Locked item graphic
+                        MTexture lockTex = GFX.Game[$"ToggleIcons/lock"];
+                        lockTex.DrawCentered(new Vector2(RenderScale*X, RenderScale*Y+0.01f), Color.White, RenderScale);
+                    }
                 }
             }
             Monocle.Draw.SpriteBatch.End();

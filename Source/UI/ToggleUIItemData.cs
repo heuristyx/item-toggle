@@ -72,8 +72,8 @@ namespace Celeste.Mod.ItemToggle.UI
         {
             foreach (ToggleableItem item in ItemGrid)
             {
-                if (item?.ItemID == -1) continue;
-                item?.SetActive(newValue);
+                if (item == null || item.ItemID == -1 || item.IsLocked) continue;
+                item.SetActive(newValue);
             }
         }
     }
@@ -82,6 +82,7 @@ namespace Celeste.Mod.ItemToggle.UI
     {
         public long ItemID { get; set; }
         public string Name { get; set; }
+        public bool IsLocked { get; set; } = false;
         public Func<bool> GetActive { get; set; }
         public Action<bool> SetActive { get; set; }
 
