@@ -60,7 +60,11 @@ namespace Celeste.Mod.ItemToggle
             if (ItemToggleModule.Settings.ResetFlagsOnLoad != ItemToggleModuleSettings.FlagResetSetting.None) {
                 // Clear session collectible data & reset level state
                 foreach (string flag in self.Session.Flags) {
-                    if (ItemToggleModule.Settings.ResetFlagsOnLoad == ItemToggleModuleSettings.FlagResetSetting.All || flag.StartsWith("collected_seeds_of_") || flag.StartsWith("dashSwitch_")) {
+                    bool resetAll = ItemToggleModule.Settings.ResetFlagsOnLoad == ItemToggleModuleSettings.FlagResetSetting.All;
+                    bool resetDashSwitches = ItemToggleModule.Settings.ResetDashSwitches;
+                    bool strawberrySeedsFlag = flag.StartsWith("collected_seeds_of_");
+                    bool dashSwitchFlag = flag.StartsWith("dashSwitch_");
+                    if (resetAll || strawberrySeedsFlag || (dashSwitchFlag && resetDashSwitches)) {
                         self.Session.SetFlag(flag,false);
                     }
                 }
