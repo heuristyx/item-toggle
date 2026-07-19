@@ -16,7 +16,7 @@ public class ItemToggleModuleSettings : EverestModuleSettings {
         All
     }
 
-    [SettingName("Reset level changes on reload"), SettingSubText("On \"Standard\", resets all collectibles, breakable blocks and hidden passages\nupon reload. Selecting \"All\" may have unintended consequences.")]
+    [SettingName("Reset level changes on reload"), SettingSubText("On \"Standard\", resets all collectibles, keydoors, breakable blocks and hidden\npassages upon reload. Selecting \"All\" may have unintended consequences.")]
     public FlagResetSetting ResetFlagsOnLoad { get; set; } = FlagResetSetting.Standard;
 
     [SettingName("Reset dash switches on reload"), SettingSubText("Whether activated dash switches (and gates) should be reset upon reload.\nNote that reloads happen every room, so gates activated in another room\nwill close if this setting is on.")]
